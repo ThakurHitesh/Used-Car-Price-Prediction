@@ -1,3 +1,7 @@
+#Python program to predict the price of the used cars with machine learning.
+#Author - Hitesh Thakur
+
+#Importing required libraries
 import pandas as pd;
 from copy import deepcopy;
 import matplotlib.pyplot as plt;
@@ -7,21 +11,31 @@ from sklearn.model_selection import train_test_split;
 from sklearn.linear_model import LinearRegression;
 from sklearn.metrics import r2_score,mean_squared_error;
 from sklearn.preprocessing import StandardScaler;
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import GridSearchCV
 
+#Reading data from the .csv file using pandas
 df = pd.read_csv("autos.csv",encoding='cp1252');
-##Drop irrelevant values
+
+#Dropping features that are irrelevant with price of the car [Note : No. of prictures for each sample is 0]
 df.drop(['name','abtest','dateCrawled','dateCreated','lastSeen','nrOfPictures','seller','offerType','postalCode','monthOfRegistration'],axis='columns',inplace=True);
-## Removing outliers
+
+# Removing outliers
 new_df=deepcopy(df[(df['price'] > 120) & (df['price'] < 120000) & (df['yearOfRegistration'] > 1970) & (df['yearOfRegistration'] < 2018) & (df['powerPS'] > 50) & (df['powerPS'] < 500)]);
-## print("Data remaning : ",(new_df.shape[0]/df.shape[0])*100);  ##Avalable data
-##print(new_df.isnull().sum());
+
+#Percentage of data available after filtering and preprocessing 
+print("Data remaning : ",(new_df.shape[0]/df.shape[0])*100);
+
+#Checking for the total number of null values for each feature
+print(new_df.isnull().sum());
+
+#Replacing NaN
 new_df.fillna({'vehicleType':'vt-not-declared','gearbox':'gb-not-declared','model':'m-not-declared','fuelType':'ft-not-declared','notRepairedDamage':'rd-not-declared'}, inplace=True);
-#print(new_df.duplicated().sum());
+
+#Removing duplicate samples in the dataset
 new_df=new_df.drop_duplicates();
 
-#new_df.to_csv("Preprocessed_Automobiles.csv",index=False);
-
-## Plotting each column
+# Plotting bar plots for each feature
 col_names=['vehicleType','gearbox','model','fuelType','notRepairedDamage'];
 for temp in col_names:
     y=new_df[temp].groupby(new_df[temp]).count().sort_values(ascending=False);
@@ -31,40 +45,31 @@ for temp in col_names:
     plt.xticks(x,y.index, rotation=45);
     plt.show();
 
-#print(new_df.head());
-#print(new_df.columns);
-
-# for x in ['vehicleType',
-#        'gearbox', 'model', 'fuelType', 'brand',
-#       'notRepairedDamage']:
-#     print(new_df[x].unique());
-
-#Description=new_df['name'].groupby(new_df['name'].apply(len)).count().sort_values(ascending=False);
-#print(Description);
-
+#Reseting index for thr preprocessed dataset
 new_df.reset_index(inplace=True);
 
+#Converting non numeric data into numeric using get_dummies function from pandas
 cars=pd.DataFrame();
 for x in ['vehicleType', 'gearbox','model', 'fuelType',
           'brand', 'notRepairedDamage']:
     dumpy_variable=pd.get_dummies(new_df[x],sparse=True);
     dumpy_variable.drop(dumpy_variable.columns[0],axis='columns',inplace=True);
     cars = pd.concat([cars, dumpy_variable], axis='columns');
+
+#Features and targets
 cars=pd.concat([cars,new_df['yearOfRegistration'],new_df['powerPS'],new_df['kilometer']], axis='columns');
 target=new_df['price'];
-#print(target);
 
+#Splitting data into training set and testing set
 X_train,X_test,Y_train,Y_test=train_test_split(cars,target,test_size=0.33,random_state=0);
+
+#Normalizing data
 STD=StandardScaler();
 X_train=STD.fit_transform(X_train);
 X_test=STD.transform(X_test);
 
-
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import GridSearchCV
-
+#Training the model for our dataset
 rf = RandomForestRegressor()
-
 param_grid = { "criterion" : ["mse"]
               , "min_samples_leaf" : [3]
               , "min_samples_split" : [3]
@@ -85,8 +90,10 @@ forest.fit(X_train, Y_train)
 # Explained variance score: 1 is perfect prediction
 print('Score: %.2f' % forest.score(X_test, Y_test));
 
+#ADDITIONAL PREPROCESSING
 
-##found no correlation between price and name length; also price and abtest
+##Found no correlation between price and name length; also price and abtest
+
 #name_length=np.array([len(x) for x in new_df['name']]);
 #print(name_length.shape);
 #print(new_df['price'].shape);
