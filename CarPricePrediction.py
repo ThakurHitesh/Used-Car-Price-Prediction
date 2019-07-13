@@ -69,7 +69,7 @@ param_grid = { "criterion" : ["mse"]
               , "min_samples_leaf" : [3]
               , "min_samples_split" : [3]
               , "max_depth": [10]
-              , "n_estimators": [500]}
+              , "n_estimators": [60]}
 
 gs = GridSearchCV(estimator=rf, param_grid=param_grid, cv=2, verbose=1)
 gs = gs.fit(X_train, Y_train)
